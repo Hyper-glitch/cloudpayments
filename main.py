@@ -1,7 +1,8 @@
 """The main module for running CloudPayments client"""
-import aiohttp
+import asyncio
+
 from environs import Env
-import uuid
+
 from cloudpayments_client import CloudPaymentsClient
 
 
@@ -23,7 +24,10 @@ def run_cloudpayments_client():
     }
 
     cloudpayments_client = CloudPaymentsClient(login=public_id, password=api_secret)
-    cloudpayments_client.charge(params=params, one_stage_payment=True)
+    cloudpayments_client.session
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(cloudpayments_client.charge(params=params, one_stage_payment=True))
+    loop.close()
 
 
 if __name__ == '__main__':
