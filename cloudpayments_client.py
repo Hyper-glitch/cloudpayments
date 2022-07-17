@@ -23,6 +23,18 @@ class CloudPaymentsClient(AbstractInteractionClient):
             'X-Request-ID': str(uuid.uuid4()),
         }
 
+    def check_on_success(self, response: dict) -> None:
+        """Raise an exception if response unsuccessful.
+        :param response: - response from request.
+        :return: None
+        """
+        if not response['Success']:
+            raise SuccessResponseError(
+                service=self.SERVICE,
+                method=None,
+                message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
+            )
+
     def validate_amount(self, amount: int) -> None:
         """Validate amount of transaction, if it less than 0.01, then raise an exception.
         :param amount: Payment amount, Numeric, Required.
@@ -61,6 +73,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
         else:
             first_step_url = self.endpoint_url(relative_url=two_stage_endpoint)
             response = await self.post(interaction_method='', url=first_step_url, **kwargs)
+            self.check_on_success(response=response)
             transaction_id = response['Model']['TransactionId']
 
             confirm_kwargs = {
@@ -71,11 +84,5 @@ class CloudPaymentsClient(AbstractInteractionClient):
             response = await self.post(interaction_method='', url=second_step_url, **confirm_kwargs)
 
         await self.close()
-
-        if not response['Success']:
-            raise SuccessResponseError(
-                service=self.SERVICE,
-                method=None,
-                message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
-            )
+        self.check_on_success(response=response)
         return response
