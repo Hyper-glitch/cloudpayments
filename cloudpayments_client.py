@@ -33,19 +33,6 @@ class CloudPaymentsClient(AbstractInteractionClient):
                 message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
             )
 
-    def validate_amount(self, amount: int) -> None:
-        """Validate amount of transaction, if it less than 0.01, then raise an exception.
-        :param amount: Payment amount, Numeric, Required.
-        :return: None
-        """
-        min_transaction_value = 0.01
-        if amount < min_transaction_value:
-            raise TransactionValueError(
-                service=self.SERVICE,
-                method=None,
-                message='The amount parameter does not accept a transaction amount less than 0.01.',
-            )
-
     async def charge(self, params: dict, one_stage_payment: bool = None) -> None:
         """
         Method for payment by data cryptogram result of encryption algorithm.
@@ -56,9 +43,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
         confirm_url = 'payments/confirm'
-
         amount = params['Amount']
-        self.validate_amount(amount)
 
         kwargs = {
             'params': params,
