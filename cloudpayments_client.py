@@ -1,5 +1,4 @@
 """Module for Cloudpayments API client."""
-import urllib.parse as urllib
 import uuid
 
 import aiohttp
@@ -47,12 +46,12 @@ class CloudPaymentsClient(AbstractInteractionClient):
                 message='The amount parameter does not accept a transaction amount less than 0.01.',
             )
 
-    async def charge(self, params: dict, one_stage_payment: bool = None) -> dict:
+    async def charge(self, params: dict, one_stage_payment: bool = None) -> None:
         """
         Method for payment by data cryptogram result of encryption algorithm.
         :param params: Needed parameters for make a success request.
         :param one_stage_payment: flag, that define which payment we need to use.
-        :return: response: successful transaction response.
+        :return: None.
         """
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
@@ -85,4 +84,3 @@ class CloudPaymentsClient(AbstractInteractionClient):
 
         await self.close()
         await self.check_on_success(response=response)
-        return response
