@@ -1,7 +1,7 @@
 """Module for Cloudpayments API client."""
 import urllib.parse as urllib
 
-from aiohttp import BasicAuth
+import aiohttp
 
 from abstract_client import AbstractInteractionClient, BaseInteractionError
 
@@ -15,11 +15,14 @@ class CloudPaymentsClient(AbstractInteractionClient):
     BASE_URL = 'https://api.cloudpayments.ru/'
     SERVICE = 'CloudPayments'
 
-    def __int__(self):
+    def __init__(self, login, password):
+        super().__init__()
         self.test_url = urllib.urljoin(self.BASE_URL, 'test')
         self.cloudpayments_session = self.create_session()
+        self.auth = aiohttp.BasicAuth(login=login, password=password, encoding='utf-8')
 
-    def validate_amount(self, amount):
+    def validate_amount(self, amount: int) -> None:
+        """Validate amount of transaction, if it less than 0.01, then raise an exception."""
         min_transaction_value = 0.01
         if amount < min_transaction_value:
             raise TransactionValueError(
@@ -28,19 +31,23 @@ class CloudPaymentsClient(AbstractInteractionClient):
                 message='The amount parameter does not accept a transaction amount less than 0.01.',
             )
 
-    def charge(self, auth: BasicAuth, headers: dict, params: dict, one_stage_payment: bool = None):
+    async def charge(self, headers: dict, params: dict, one_stage_payment: bool = None):
         """
         Method for payment by payment data cryptogram result of encryption algorithm.
+        :param params: Needed parameters for make a success request.
+        :param headers: Needed header for make a success request.
+        :param auth: Basic access authentication, that contains login and password.
         :param one_stage_payment: flag, that define which payment we need to use.
         :return: None
         """
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
         self.validate_amount(params['Amount'])
+
         kwargs = {
             'params': params,
             'headers': headers,
-            'auth': auth,
+            'auth': self.auth,
         }
 
         if one_stage_payment:
