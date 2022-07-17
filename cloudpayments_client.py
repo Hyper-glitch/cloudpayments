@@ -36,14 +36,19 @@ class CloudPaymentsClient(AbstractInteractionClient):
         """
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
+        self.validate_amount(params['Amount'])
+        kwargs = {
+            'params': params,
+            'headers': headers,
+            'auth': auth,
+        }
 
         if one_stage_payment:
             url = self.endpoint_url(relative_url=one_stage_endpoint)
         else:
             url = self.endpoint_url(relative_url=two_stage_endpoint)
 
-        self.validate_amount(params['Amount'])
-        response = await self.post(interaction_method='', url=url, **params)  # maybe we should use asyncio
+        response = await self.post(interaction_method='', url=url, **kwargs)  # maybe we should use asyncio
 
         if response['Success']:
             token = ''
