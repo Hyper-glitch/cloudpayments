@@ -24,7 +24,10 @@ class CloudPaymentsClient(AbstractInteractionClient):
         }
 
     def validate_amount(self, amount: int) -> None:
-        """Validate amount of transaction, if it less than 0.01, then raise an exception."""
+        """Validate amount of transaction, if it less than 0.01, then raise an exception.
+        :param amount: Payment amount, Numeric, Required.
+        :return: None
+        """
         min_transaction_value = 0.01
         if amount < min_transaction_value:
             raise TransactionValueError(
@@ -33,13 +36,12 @@ class CloudPaymentsClient(AbstractInteractionClient):
                 message='The amount parameter does not accept a transaction amount less than 0.01.',
             )
 
-    async def charge(self, params: dict, one_stage_payment: bool = None):
+    async def charge(self, params: dict, one_stage_payment: bool = None) -> dict:
         """
         Method for payment by data cryptogram result of encryption algorithm.
         :param params: Needed parameters for make a success request.
-        :param auth: Basic access authentication, that contains login and password.
         :param one_stage_payment: flag, that define which payment we need to use.
-        :return: None
+        :return: response: successful transaction response.
         """
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
@@ -68,11 +70,12 @@ class CloudPaymentsClient(AbstractInteractionClient):
             second_step_url = self.endpoint_url(relative_url=confirm_url)
             response = await self.post(interaction_method='', url=second_step_url, **confirm_kwargs)
 
+        await self.close()
+
         if not response['Success']:
             raise SuccessResponseError(
                 service=self.SERVICE,
                 method=None,
                 message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
             )
-
-        await self.close()
+        return response
