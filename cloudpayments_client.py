@@ -4,22 +4,19 @@ import uuid
 
 import aiohttp
 
-from abstract_client import AbstractInteractionClient, BaseInteractionError
-
-
-class TransactionValueError(BaseInteractionError):
-    pass
+from abstract_client import AbstractInteractionClient
+from exceptions import TransactionValueError, SuccessResponseError
 
 
 class CloudPaymentsClient(AbstractInteractionClient):
     """Cloudpayments API client, inherited from AbstractInteractionClient."""
     BASE_URL = 'https://api.cloudpayments.ru/'
     SERVICE = 'CloudPayments'
+    CONNECTOR = aiohttp.TCPConnector()
 
     def __init__(self, login, password):
         super().__init__()
         self.test_url = urllib.urljoin(self.BASE_URL, 'test')
-        self.cloudpayments_session = self.create_session()
         self.auth = aiohttp.BasicAuth(login=login, password=password, encoding='utf-8')
         self.headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -38,7 +35,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
 
     async def charge(self, params: dict, one_stage_payment: bool = None):
         """
-        Method for payment by payment data cryptogram result of encryption algorithm.
+        Method for payment by data cryptogram result of encryption algorithm.
         :param params: Needed parameters for make a success request.
         :param auth: Basic access authentication, that contains login and password.
         :param one_stage_payment: flag, that define which payment we need to use.
@@ -46,8 +43,9 @@ class CloudPaymentsClient(AbstractInteractionClient):
         """
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
-
-        self.validate_amount(params['Amount'])
+        confirm_url = 'payments/confirm'
+        amount = params['Amount']
+        self.validate_amount(amount)
 
         kwargs = {
             'params': params,
@@ -57,10 +55,24 @@ class CloudPaymentsClient(AbstractInteractionClient):
 
         if one_stage_payment:
             url = self.endpoint_url(relative_url=one_stage_endpoint)
+            response = await self.post(interaction_method='', url=url, **kwargs)
         else:
-            url = self.endpoint_url(relative_url=two_stage_endpoint)
+            first_step_url = self.endpoint_url(relative_url=two_stage_endpoint)
+            response = await self.post(interaction_method='', url=first_step_url, **kwargs)
+            transaction_id = response['Model']['TransactionId']
 
-        response = await self.post(interaction_method='', url=url, **kwargs)  # maybe we should use asyncio
+            confirm_kwargs = {
+                'TransactionId': transaction_id,
+                'Amount': amount,
+            }
+            second_step_url = self.endpoint_url(relative_url=confirm_url)
+            response = await self.post(interaction_method='', url=second_step_url, **confirm_kwargs)
 
-        if response['Success']:
-            token = ''
+        if not response['Success']:
+            raise SuccessResponseError(
+                service=self.SERVICE,
+                method=None,
+                message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
+            )
+
+        await self.close()
