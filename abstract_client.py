@@ -1,6 +1,8 @@
+"""Module with Base and Abstract classes."""
 import asyncio
 import random
 import time
+import urllib.parse as urllib
 from itertools import chain
 from typing import Any, ClassVar, Dict, Optional, Type
 
@@ -27,13 +29,13 @@ class InteractionResponseError(BaseInteractionError):
     default_message = 'Backend unexpected response'
 
     def __init__(
-        self, *,
-        status_code: int,
-        method: str,
-        service: str,
-        message: Optional[str] = None,
-        response_status: Optional[str] = None,
-        params: Optional[Dict[str, Any]] = None,
+            self, *,
+            status_code: int,
+            method: str,
+            service: str,
+            message: Optional[str] = None,
+            response_status: Optional[str] = None,
+            params: Optional[Dict[str, Any]] = None,
     ):
         """
         :param status_code: HTTP status code
@@ -113,11 +115,11 @@ class AbstractInteractionClient:
         return await response.json()
 
     async def _make_request(
-        self,
-        interaction_method: str,
-        method: str,
-        url: str,
-        **kwargs: Any
+            self,
+            interaction_method: str,
+            method: str,
+            url: str,
+            **kwargs: Any
     ) -> ClientResponse:
         """Wraps ClientSession.request allowing retries, updating metrics."""
 
@@ -153,11 +155,11 @@ class AbstractInteractionClient:
         return response  # type: ignore
 
     async def _request(  # noqa: C901
-        self,
-        interaction_method: str,
-        method: str,
-        url: str,
-        **kwargs: Any,
+            self,
+            interaction_method: str,
+            method: str,
+            url: str,
+            **kwargs: Any,
     ) -> Dict[str, Any]:
 
         response = await self._make_request(interaction_method, method, url, **kwargs)
@@ -188,4 +190,4 @@ class AbstractInteractionClient:
     def endpoint_url(self, relative_url: str, base_url_override: Optional[str] = None) -> str:
         base_url = (base_url_override or self.BASE_URL).rstrip('/')
         relative_url = relative_url.lstrip('/')
-        return f'{base_url}/{relative_url}'
+        return urllib.urljoin(base_url, relative_url)
