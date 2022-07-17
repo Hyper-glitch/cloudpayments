@@ -7,6 +7,7 @@ from cloudpayments_client import CloudPaymentsClient
 
 
 def run_cloudpayments_client():
+    """Main function, that run all logic for cloudpayments_client.charge method."""
     env = Env()
     env.read_env()
 
