@@ -57,8 +57,8 @@ class CloudPaymentsClient(AbstractInteractionClient):
         else:
             first_step_url = self.endpoint_url(relative_url=two_stage_endpoint)
             response = await self.post(interaction_method='', url=first_step_url, **kwargs)
-            await self.check_on_success(response=response)
-            transaction_id = response['Model']['TransactionId']
+            serialized_response = await self.check_on_success(response=response)
+            transaction_id = serialized_response['Model']['TransactionId']
 
             confirm_kwargs = {
                 'TransactionId': transaction_id,
