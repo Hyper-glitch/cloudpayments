@@ -54,7 +54,3 @@ class InteractionResponseError(BaseInteractionError):
 
 class TransactionValueError(BaseInteractionError):
     pass
-
-
-class SuccessResponseError(BaseInteractionError):
-    pass
