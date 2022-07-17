@@ -2,10 +2,10 @@
 import uuid
 
 import aiohttp
+from marshmallow import ValidationError
 
 from abstract_client import AbstractInteractionClient
-from exceptions import SuccessResponseError
-from marshmallow_schemas import ParamsSchema
+from marshmallow_schemas import ParamsSchema, SuccessfulResponseSchema
 
 
 class CloudPaymentsClient(AbstractInteractionClient):
@@ -22,17 +22,16 @@ class CloudPaymentsClient(AbstractInteractionClient):
             'X-Request-ID': str(uuid.uuid4()),
         }
 
-    async def check_on_success(self, response: dict) -> None:
+    async def check_on_success(self, response: dict) -> dict:
         """Raise an exception if response unsuccessful.
         :param response: - response from request.
-        :return: None
+        :return: successfully deserialized object.
         """
-        if not response['Success']:
-            raise SuccessResponseError(
-                service=self.SERVICE,
-                method=None,
-                message=f'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"]',
-            )
+        try:
+            return SuccessfulResponseSchema().load(response)
+        except ValidationError as error:
+            print(error.messages)
+            raise ValidationError
 
     async def charge(self, raw_params: dict, one_stage_payment: bool = None) -> None:
         """
