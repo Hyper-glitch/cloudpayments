@@ -21,6 +21,20 @@ class CloudPaymentsClient(AbstractInteractionClient):
             'X-Request-ID': str(uuid.uuid4()),
         }
 
+    @staticmethod
+    def validate_amount(amount: int) -> None:
+        """Validate amount of transaction, if it less than 0.01, then raise an exception.
+        :param amount: Payment amount, Numeric, Required.
+        :return: None
+        """
+        min_transaction_value = 0.01
+        if amount < min_transaction_value:
+            raise TransactionValueError(
+                service=None,
+                method=None,
+                message='The amount parameter does not accept a transaction amount less than 0.01.'
+            )
+
     async def check_on_success(self, response: dict) -> None:
         """Raise an exception if response unsuccessful.
         :param response: - response from request.
@@ -44,6 +58,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
         two_stage_endpoint = 'payments/cards/auth'
         confirm_url = 'payments/confirm'
         amount = params['Amount']
+        self.validate_amount(amount=amount)
 
         kwargs = {
             'params': params,
