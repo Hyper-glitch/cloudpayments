@@ -10,7 +10,7 @@ class ParamsSchema(Schema):
 
 
 class SuccessfulResponseSchema(Schema):
-    """Schema for deserializing and validate is response successful."""
+    """Schema for deserializing and validate if response is successful."""
     Model = fields.Dict()
     Success = fields.Boolean(validate=validate.Equal(True))
     Message = fields.String(missing=None)
