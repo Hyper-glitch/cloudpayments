@@ -16,14 +16,13 @@ class CloudPaymentsClient(AbstractInteractionClient):
 
     def __init__(self, login, password):
         super().__init__()
-        self.test_url = urllib.urljoin(self.BASE_URL, 'test')
         self.auth = aiohttp.BasicAuth(login=login, password=password, encoding='utf-8')
         self.headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Request-ID': str(uuid.uuid4()),
         }
 
-    def check_on_success(self, response: dict) -> None:
+    async def check_on_success(self, response: dict) -> None:
         """Raise an exception if response unsuccessful.
         :param response: - response from request.
         :return: None
@@ -58,6 +57,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
         one_stage_endpoint = 'payments/cards/charge'
         two_stage_endpoint = 'payments/cards/auth'
         confirm_url = 'payments/confirm'
+
         amount = params['Amount']
         self.validate_amount(amount)
 
@@ -73,7 +73,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
         else:
             first_step_url = self.endpoint_url(relative_url=two_stage_endpoint)
             response = await self.post(interaction_method='', url=first_step_url, **kwargs)
-            self.check_on_success(response=response)
+            await self.check_on_success(response=response)
             transaction_id = response['Model']['TransactionId']
 
             confirm_kwargs = {
@@ -84,5 +84,5 @@ class CloudPaymentsClient(AbstractInteractionClient):
             response = await self.post(interaction_method='', url=second_step_url, **confirm_kwargs)
 
         await self.close()
-        self.check_on_success(response=response)
+        await self.check_on_success(response=response)
         return response
