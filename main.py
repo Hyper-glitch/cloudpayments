@@ -8,7 +8,7 @@ from cloudpayments_tools import validate_amount
 
 
 def run_cloudpayments_client():
-    """Main function, that run all logic for cloudpayments_client.charge method."""
+    """Main function, that run all logic for CloudPayments."""
     env = Env()
     env.read_env()
 
