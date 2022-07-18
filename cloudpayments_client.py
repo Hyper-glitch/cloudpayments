@@ -29,9 +29,10 @@ class CloudPaymentsClient(AbstractInteractionClient):
         """
         try:
             return SuccessfulResponseSchema().load(response)
-        except ValidationError as error:
-            print(error.messages)
-            raise ValidationError
+        except ValidationError:
+            raise ValidationError(
+                'Something went wrong, please check response["Message"] or response["Model"]["ReasonCode"].'
+            )
 
     async def charge(self, raw_params: dict, one_stage_payment: bool = None) -> None:
         """
